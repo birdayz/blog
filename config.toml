@@ -18,6 +18,9 @@ authorEmail = "johannes.bruederl@gmail.com" # Author email
 [params.assets]
 customCSS = ["css/custom.css"]
 
+[params.utterances]
+enabled = true
+
 [params.info]
 adsense = "" # Adsense ID (ID only, without ca-pub-)
 enableSocial = false # Adds OpenGraph and Twitter cards
