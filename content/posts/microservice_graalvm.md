@@ -3,9 +3,7 @@ title: "Building a 22 Megabytes Microservice with Java, Javalin and GraalVM"
 date: 2018-09-23T00:41:31+02:00
 draft: true
 ---
-It's no secret that i'm not a very big fan of Java. I very much prefer programming in Go or C++. I won't go in too much detail here, as this is - obviously, quite subjective and not the point of this article.
-Despite this opinion, in my day job i'm working a lot with Java. We work a lot with externals, and the average programmer only knows Java. Not to mention that he or she typically doesn't want to learn anything else anyway. 
-Anyway, let's ignore the shortcomings of the language itself. We're working a lot with Docker containers, and Java has some shortcomings here:
+In my day job i'm working a lot with Java, even if i prefer working with Go or Rust. We contract a lot with externals, and the average programmer only knows Java, so Java is (currently!) our default language for our microservices.
 
 ## Application startup time
 This may not be entirely Java's fault. We're sadly using Spring Boot, and it is really slow. I have to tune my Kubernetes readiness probe to not check sooner than 20 seconds after starting the pod. And that's for a very small application - 500 lines of code. I didn't look too much into Spring's DI code, but i guess it's reflection based. 
