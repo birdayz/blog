@@ -4,7 +4,7 @@ title = "Nerdy stuff"
 theme = "kiss"
 copyright = "&copy; <a href=\"https://github.com/birdayz\">Johannes Bruederl</a> 2018"
 disqusShortname = ""
-googleAnalytics = ""
+googleAnalytics = "UA-126316461-1"
 # Number of posts per page
 Paginate = 10
 enableRobotsTXT = true
