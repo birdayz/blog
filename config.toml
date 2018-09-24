@@ -1,6 +1,6 @@
 baseurl = "https://birdayz.github.io"
 languageCode = "en"
-title = "Nerden"
+title = "Nerdy stuff"
 theme = "kiss"
 copyright = "&copy; <a href=\"https://github.com/birdayz\">Johannes Bruederl</a> 2018"
 disqusShortname = ""

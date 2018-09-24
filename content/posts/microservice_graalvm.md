@@ -1,25 +1,39 @@
 ---
 title: "Building a 22 Megabytes Microservice with Java, Javalin and GraalVM"
 date: 2018-09-23T00:41:31+02:00
-draft: true
+draft: false
+tags: [graalvm,aot,javalin,java]
 ---
-In my day job i'm working a lot with Java, even if i prefer working with Go or Rust. We contract a lot with externals, and the average programmer only knows Java, so Java is (currently!) our default language for our microservices. Ignoring the language constructs, syntax and object orientation in general, there's three major paint points of Java and the JVM in a Cloud Native environment:
+Oracle's GraalVM allows for ahead-of-time (AOT) compilation of JVM applications. This means, instead of running a JVM process to execute your application, the compiler builds a native binary. How does it work? On a very high level, a basic runtime (called SubstrateVM) is compiled into the binary, as well as the actual application. Sounds a little like Go, which also includes a small runtime for e.g. garbage collection.
+In this article, I'll show how to build a small sample restful webservice with GraalVM native compilation. The sample application is written in Java.
+Why would somebody even be interested in native compilation of a JVM application? On my day job at E.ON i sadly still have to work a lot with Java applications. Our tech stack is completely cloud native - we run almost everything on Kubernetes. Our applications are "typical" 12 Factor applications. In such a dockerized environment, i think there are three major reasons why native compilation would be interesting.
 
-## Application startup time
-This may not be entirely Java's fault. We're sadly using Spring Boot, and it is really slow. I have to tune my Kubernetes readiness probe to not check sooner than 20 seconds after starting the pod. And that's for a very small application - 500 lines of code. I didn't look too much into Spring's DI code, but i guess it's reflection based. 
-## Memory Footprint
-Let's just say, i can't start my Spring Boot application with less than 512MB of memory. Otherwise it'll never finish starting up, unless i give it 2+ minutes of time. While Java and especially the JVM play a key role here (example: Object Headers), this is just as well a Framework problem.
-## Application size
-Yes, this is very annoying, but not critical. The smallest JRE i can find is ~65MB large (alpine based openJDK). If you use Spring Boot, you'll have at least a ~40MB large fat jar for your application. If your application it larger, it will obviously be more. That's a minimum of 100MB per container. I think it's certainly viable to have 100MB+ large applications in 2018, it's just weak if i can get a 6MB Go binary.
+* Application startup time
 
-GraalVM proposes much, one of its features is translating JVM bytecode into native machine code. In my opinion, this can improve the situation for all the shortcomings. Startup time is going to be much faster since there's no JVM involved anymore. The same goes for the memory footprint, but let's try this out before celebrating too early.
+  This may not be entirely Java's fault. We're sadly using Spring Boot, and it is really slow. I usually have to tune my Kubernetes readiness probe to not check earlier than 20 seconds after starting the pod. And that's for a very small application - 500 lines of code. 
 
-However, GraalVM is not the holy grail and imho will never be. Many features of the JVM do not play very well with static compilation. Especially Reflection is a problem. GraalVM has to know at compile time which classes have to be included in the assembly. No dynamic class loading!
+* Memory Footprint
 
-As a proof of concept, i was looking for a rest library without excess usage of reflect. Obviously it's not spring boot - i chose javalin.io. It's just a rest library on top of Jetty, that's it.
+  Let's just say, i can't start my Spring Boot application with less than 512MB of memory. Otherwise it'll never finish starting up, unless i give it 2+ minutes of time. While Java and especially the JVM play a key role here (example: Object Headers), this is just as well a Framework problem.
+
+* Application size
+
+  The size of Java application containers is another problem. It is very annoying, but not critical. The smallest JRE i can find is ~65MB large (alpine based openJDK). If you use Spring Boot, you'll have at least a ~40MB large fat jar for your application. If your application it larger, it will obviously be more. That's a minimum of 100MB per container. Note that the JRE layer of the Docker image might be reused by multiple Docker image, so it is not really 100MB+ for each image of your app. While I think it's certainly bearable to have 100MB+ large hello world applications in 2018, it's just weak if i can have a 6MB Go binary.
+
+GraalVM AOT compilation might improve this situation. I expect startup time to be pretty much instant without the need for a JVM, and application size to be significantly smaller. GraalVM has some serious limitations, because several features of the JVM do not play well with static compilation.
+A full list can be found here: https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md. The documentation is crystal clear here: Dynamic Class Loading is and will not be supported. Instead, the compiler analyzes the code and compiles all required classes into the binary. In combination with reflection, this becomes a nightmare for the current Java ecosystem. Many libraries and frameworks use reflection to dynamically instantiate classes. GraalVM does not handle this very well, in many cases additional compiler configuration has to be provided. One of the reasons is, that a call to e.g. Class.forName() may be based on runtime information. A very simple example:
+
+```
+if (someVariable) {
+    Class.forName("SomeClazz")
+    ...
+}
+```
+Since the value of someVariable is not known at compile time, the compiler can not know whether to include "SomeClazz". Not to mention that it's just a string, and the compiler has to search for this class on the classpath at compile time. If the compiler decides to include this class, it will just do that and throw an error if the class is not found. That's nice. However, this is only best-effort. There is no guarantee that all required classes are included at compile time - which means that classes may be missing, and runtime errors are thrown when they are being instantiated. There's many more limitations, for a full reference head over to GraalVM's [documentation](https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md).
+As a proof of concept, i was looking for a rest library without excess usage of reflect. Obviously it's not spring boot - i chose [javalin.io](https://javalin.io). It's just a rest library on top of Jetty, that's it.
 # Getting started
 While i recommend performing builds in Docker, it's very helpful to install GraalVM locally.
-I recommend using sdkman.io, it eases the management of JDKs. If you don't have sdkman installed already:
+I use [sdkman](https://sdkman.io), it eases the management of JDKs. If you don't have sdkman installed already:
 
 `curl -s "https://get.sdkman.io" | bash`
 
@@ -30,7 +44,7 @@ Install GraalVM JDK:
 Let's start with a very simple Hello World:
 <script src="https://gist.github.com/birdayz/2a6692f208bfc8be9360689d9d9d14d5.js"></script>
 
-In addition, we must not forget to declare the necessary dependencies. We must include Jackson, as it will be loaded at run-time (d'uh). The same case for a SLF4J binding, Javalin recommends to use slf4j-simple.
+In addition, we must not forget to declare the necessary dependencies. We must include Jackson, as it will be loaded at runtime (d'uh). The same case for a SLF4J binding, Javalin recommends to use slf4j-simple.
 <script src="https://gist.github.com/birdayz/665c6dddef5da64858912cd473798230.js"></script>
 
 Also, we'll need to build a fat jar that includes all classes and jars of our application.
@@ -129,11 +143,11 @@ java.lang.IllegalArgumentException: Class org.eclipse.jetty.servlet.ServletMappi
 
 Reflection didn't work. This is not a big surprise, but shows the fundamental weakness of GraalVM: it can't guarantee that your application works, even if it compiles.
 
-To fix this issue, we have to tell GraalVM that the class ServletMapping has to be included in the binary. Since it's reflection and no 'normal' part of the code, it didn't detect it. There's two possibilities to do this: code-based and json configuration-based. I tested both, i think i prefer the json approach but in the end it does not really matter. Add a file with the following contents to your project:
+To fix this issue, we have to tell GraalVM that the class ServletMapping has to be included in the binary. Since it's reflection and no 'normal' part of the code, it didn't detect it. There's two possibilities to do this: code-based and JSON configuration-based. I tested both, i think i prefer the json approach but in the end it does not really matter. Add a file with the following contents to your project:
 <script src="https://gist.github.com/birdayz/6ced28708961972268593737c12c0c0b.js"></script>
 
-Note the special notation `[Lorg.eclipse.jetty.servlet.ServletMapping;`. This is necessary because in this case, an array of ServletMapping object is being reflectively instantiated. In addition, i've added slf4j and Jackson classes, so they are found at run-time. In both cases, runtime errors are thrown because reflection didn't work.
-Also, we have to add our own classes to the reflection list. If we don't do this, the following cryptic exception will be thrown:
+Note the special notation `[Lorg.eclipse.jetty.servlet.ServletMapping;`. This is necessary because in this case, an array of ServletMapping object is being reflectively instantiated. In addition, i've added slf4j and Jackson classes, so they are found at runtime. In both cases, runtime errors are thrown because reflection didn't work.
+Also, we have to add our own classes to the reflection list. If we don't do this, the following cryptic exception will be thrown when performing a request:
 ```
 [qtp1024494636-165] WARN io.javalin.core.ExceptionMapper - Uncaught exception
 com.fasterxml.jackson.databind.exc.InvalidDefinitionException: No serializer found for class de.nerden.samples.graal.Test and no properties discovered to create BeanSerializer (to avoid exception, disable SerializationFeature.FAIL_ON_EMPTY_BEANS)
@@ -207,7 +221,7 @@ Yay. And the startup time is instant. No JVM!
 
 So, how did this turn out, looking at my 3 points of criticism?
 ## Application startup time
-The application starts instantly. While Javalin is very fast even on the JVM (~1-2 Seconds), this will be VERY appealing for CLI tools.
+The application starts instantly. While Javalin is starting very quickly even on the JVM (~1-2 Seconds), this will be VERY appealing for CLI tools.
 ## Memory Footprint
 Measuring memory usage of a process is not very straight-forward. There's several metrics - according so some post on Stackoverflow 'Virtual Size" aka VSZ is a good metric:
 https://stackoverflow.com/questions/131303/how-to-measure-actual-memory-usage-of-an-application-or-process
@@ -217,19 +231,29 @@ So let's use check this out:
 cat /proc/7812/status
 VmRSS:     18260 kB
 ```
-18 MB, that looks quite nice. I didn't perform any loadtests. By performing some manual requests with curl it went up to 25MB.
-We have the luxury that we can directly compare this to the sample application, running in the JVM:
-`VmRSS:    183580 kB`
-So in this specific very simple case, it's about 1/10 of memory usage.
+18 MB, that looks quite nice. Note that I didn't perform any load tests, these are just some manual tests with no load. With some more requests with curl it went up to 25MB.
+The good thing: we have the luxury that we can directly compare this to the same application, but on the JVM.
+
+```VmRSS:    183580 kB```
+
+In this specific case, it's about 1/10 of memory usage.
 ## Application size
 The application's fat jar is 5.7MB large and the smallest JRE is 57MB: https://hub.docker.com/r/library/openjdk/tags/. For simplicity, let's say 60MB total. The native binary is about 22MB large:
 
-```-rwxr-xr-x 1 j0e users  22M Sep 24 01:38 graal-javalin```
+```
+-rwxr-xr-x 1 j0e users  22M Sep 24 01:38 graal-javalin
+```
 
 That's ~ 1/3 the size. That's absolutely acceptable, and almost in range of the size of Go binaries.
 Please note that with JDK9, sizes may be smaller. So i think the advantage here exists, but may not be very large.
 
-In general, GraalVM is a cool thing. It just feels like a dirty hack. I really dislike that there may always be runtime errors that GraalVM can't predict at compile time (correct me if i'm wrong). I'm not sure if this is the future of Java. It's worth noting that some library/framework authors are actively investing time into supporting GraalVM. As a matter of fact, micronaut.io is compatible: https://github.com/graemerocher/micronaut-graal-experiments.
+In general, GraalVM is a cool thing. It just feels like a dirty hack. I really dislike that there may always be runtime errors that GraalVM can't predict at compile time (correct me if i'm wrong). I'm not sure if this is the future of Java, but does it have one anyway? ;)
+It's worth noting that some library/framework authors are actively investing time into supporting GraalVM. As a matter of fact, micronaut.io is now compatible: https://github.com/graemerocher/micronaut-graal-experiments.
 
 
 The full code, including a Dockerfile is available on GitHub: https://github.com/birdayz/graal-javalin.
+
+In addition, i made a Docker image you can use as base image to build a container with only the static executable, similar how it is done for Go applications.
+<script src="https://gist.github.com/birdayz/37c775c11683a2eb0bb1ef3311f235df.js"></script>
+
+This Dockerfile uses Docker multi-stage builds. There's two containers, one just used for the build, and the final output container which only contains the application.
