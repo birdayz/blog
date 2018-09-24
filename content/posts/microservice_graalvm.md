@@ -14,14 +14,14 @@ Why would somebody even be interested in native compilation of a JVM application
 
 * Memory Footprint
 
-  In my experience, you don't want to give your Spring Boot applications lass than 512MB of memory. Otherwise it can take multiple minutes to start. While Java and especially JVM overhead are to blame here, this is just as well a Framework problem. It's no secret that Spring is very bloated and uses a lot of reflection.
+  In my experience, you don't want to give your Spring Boot applications less than 512MB of memory. Otherwise it can take multiple minutes to start. While Java and especially JVM overhead are to blame here, this is just as well a Framework problem. It's no secret that Spring is very bloated and uses a lot of reflection.
 
 * Application size
 
   The size of Java application containers is another problem. It is very annoying, but not critical. The smallest JRE i can find is ~65MB large (alpine based openJDK). If you use Spring Boot, you'll have at least a ~40MB large fat jar for your application. If your application it larger, it will obviously be more. That's a minimum of 100MB per container. Note that the JRE layer of the Docker image might be reused by multiple Docker image, so it is not really 100MB+ for each image of your app. While I think it's certainly bearable to have 100MB+ large hello world applications in 2018, it's just weak if i can have a 6MB Go binary.
 
 GraalVM AOT compilation might improve this situation. I expect startup time to be pretty much instant without the need for a JVM, and application size to be significantly smaller. GraalVM has some serious limitations, because several features of the JVM do not play well with static compilation.
-A full list can be found here: https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md. The documentation is crystal clear here: Dynamic Class Loading is and will not be supported. Instead, the compiler analyzes the code and compiles all required classes into the binary. In combination with reflection, this becomes a nightmare for the current Java ecosystem. Many libraries and frameworks use reflection to dynamically instantiate classes. GraalVM does not handle this very well, in many cases additional compiler configuration has to be provided. One of the reasons is, that a call to e.g. Class.forName() may be based on runtime information. A very simple example:
+A full list can be found [here](https://github.com/oracle/graal/blob/master/substratevm/LIMITATIONS.md). The documentation is crystal clear here: Dynamic Class Loading is and will not be supported. Instead, the compiler analyzes the code and compiles all required classes into the binary. In combination with reflection, this becomes a nightmare for the current Java ecosystem. Many libraries and frameworks use reflection to dynamically instantiate classes. GraalVM does not handle this very well, in many cases additional compiler configuration has to be provided. One of the reasons is, that a call to e.g. Class.forName() may be based on runtime information. A very simple example:
 
 ```
 if (someVariable) {
@@ -146,7 +146,7 @@ Reflection didn't work. This is not a big surprise, but shows the fundamental we
 To fix this issue, we have to tell GraalVM that the class ServletMapping has to be included in the binary. Since it's reflection and no 'normal' part of the code, it didn't detect it. There's two possibilities to do this: code-based and JSON configuration-based. I tested both, i think i prefer the json approach but in the end it does not really matter. Add a file with the following contents to your project:
 <script src="https://gist.github.com/birdayz/6ced28708961972268593737c12c0c0b.js"></script>
 
-Note the special notation `[Lorg.eclipse.jetty.servlet.ServletMapping;`. This is necessary because in this case, an array of ServletMapping object is being reflectively instantiated. In addition, i've added slf4j and Jackson classes, so they are found at runtime. In both cases, runtime errors are thrown because reflection didn't work.
+Note the special notation `[Lorg.eclipse.jetty.servlet.ServletMapping;`. This is necessary because in this case, an array of ServletMapping objects is being reflectively instantiated. In addition, i've added slf4j and Jackson classes, so they are found at runtime. In both cases, runtime errors are thrown because reflection didn't work.
 Also, we have to add our own classes to the reflection list. If we don't do this, the following cryptic exception will be thrown when performing a request:
 ```
 [qtp1024494636-165] WARN io.javalin.core.ExceptionMapper - Uncaught exception
