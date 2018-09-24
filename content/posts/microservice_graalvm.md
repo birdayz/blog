@@ -234,7 +234,9 @@ VmRSS:     18260 kB
 18 MB, that looks quite nice. Note that I didn't perform any load tests, these are just some manual tests with no load. With some more requests with curl it went up to 25MB.
 The good thing: we have the luxury that we can directly compare this to the same application, but on the JVM.
 
-```VmRSS:    183580 kB```
+```
+VmRSS:    183580 kB
+```
 
 In this specific case, it's about 1/10 of memory usage.
 ## Application size
