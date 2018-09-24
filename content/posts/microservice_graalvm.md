@@ -3,12 +3,12 @@ title: "Building a 22 Megabytes Microservice with Java, Javalin and GraalVM"
 date: 2018-09-23T00:41:31+02:00
 draft: true
 ---
-In my day job i'm working a lot with Java, even if i prefer working with Go or Rust. We contract a lot with externals, and the average programmer only knows Java, so Java is (currently!) our default language for our microservices.
+In my day job i'm working a lot with Java, even if i prefer working with Go or Rust. We contract a lot with externals, and the average programmer only knows Java, so Java is (currently!) our default language for our microservices. Ignoring the language constructs, syntax and object orientation in general, there's three major paint points of Java and the JVM in a Cloud Native environment:
 
 ## Application startup time
 This may not be entirely Java's fault. We're sadly using Spring Boot, and it is really slow. I have to tune my Kubernetes readiness probe to not check sooner than 20 seconds after starting the pod. And that's for a very small application - 500 lines of code. I didn't look too much into Spring's DI code, but i guess it's reflection based. 
 ## Memory Footprint
-Let's just say, i can't start my Spring Boot application with less than 512MB of memory. Otherwise it'll never finish starting up, unless i give it 2+ minutes of time. While Java and especially the JVM plays a key role here (example: Object Headers), this is just as well a Framework problem.
+Let's just say, i can't start my Spring Boot application with less than 512MB of memory. Otherwise it'll never finish starting up, unless i give it 2+ minutes of time. While Java and especially the JVM play a key role here (example: Object Headers), this is just as well a Framework problem.
 ## Application size
 Yes, this is very annoying, but not critical. The smallest JRE i can find is ~65MB large (alpine based openJDK). If you use Spring Boot, you'll have at least a ~40MB large fat jar for your application. If your application it larger, it will obviously be more. That's a minimum of 100MB per container. I think it's certainly viable to have 100MB+ large applications in 2018, it's just weak if i can get a 6MB Go binary.
 
