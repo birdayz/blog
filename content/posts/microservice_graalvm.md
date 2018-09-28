@@ -223,8 +223,7 @@ So, how did this turn out, looking at my 3 points of criticism?
 ## Application startup time
 The application starts instantly. While Javalin is starting very quickly even on the JVM (~1-2 Seconds), this will be VERY appealing for CLI tools.
 ## Memory Footprint
-Measuring memory usage of a process is not very straight-forward. There's several metrics - according so some post on Stackoverflow RSS is a good metric:
-https://stackoverflow.com/questions/131303/how-to-measure-actual-memory-usage-of-an-application-or-process
+Measuring memory usage of a process is not very straight-forward. There's several metrics - according so some post on  [Stackoverflow](https://stackoverflow.com/questions/131303/how-to-measure-actual-memory-usage-of-an-application-or-process) RSS is a good metric.
 So let's use check this out: 
 
 ```
