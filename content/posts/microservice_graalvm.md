@@ -214,7 +214,7 @@ Perform the sample call:
 
 ```
  j0e@thinkpad  ~/projects/graal-javalin  master ? ⍟2  curl localhost:7000                                         ✔  33707  01:15:12 
-{"abc":"LOL"}%
+{"someValue":"Hello World!"}%
 ```
 
 Yay. And the startup time is instant. No JVM!
