@@ -1,3 +1,6 @@
 [submodule "themes/kiss"]
 	path = themes/kiss
 	url = https://github.com/birdayz/kiss
+[submodule "public"]
+	path = public
+	url = git@github.com:birdayz/birdayz.github.io.git

@@ -4,6 +4,7 @@ date: 2018-09-23T00:41:31+02:00
 draft: false
 tags: [graalvm,aot,javalin,java]
 ---
+
 Oracle's GraalVM allows for ahead-of-time (AOT) compilation of JVM applications. This means, instead of running a JVM process to execute your application, the compiler builds a native binary. How does it work? On a very high level, a basic runtime (called SubstrateVM) is compiled into the binary, as well as the actual application. Sounds a little like Go, which also includes a small runtime for e.g. garbage collection.
 In this article, I'll show how to build a small sample restful webservice with GraalVM native compilation. The sample application is written in Java.
 Why would somebody even be interested in native compilation of a JVM application? On my day job at E.ON i sadly still have to work a lot with Java applications. Our tech stack is completely cloud native - we run almost everything on Kubernetes. Our applications are "typical" 12 Factor applications. In such a dockerized environment, i think there are three major reasons why native compilation would be interesting.
