@@ -31,7 +31,7 @@ The equivalent to a `EventHub Namespace` in the Kafka world is a `Kafka Cluster`
 This can be either done on the Portal, or via CLI:
 
 ```shell
-az eventhubs namespace create --name joe-test-2 --resource-group esp-iot
+az eventhubs namespace create --name joe-test-2 --resource-group my-resource-group
 ```
 This command may take some minutes to complete.
 
@@ -40,13 +40,13 @@ Since quite some time, the `Kafka compatibility mode` is enabled by default for 
 After creating the EventHub Namespace, you have to create an `EventHub`. The equivalent to an `EventHub` is a `Kafka Topic`.
 
 ```shell
-az eventhubs eventhub create -g esp-iot --namespace-name joe-test-2 --name iot-data
+az eventhubs eventhub create -g my-resource-group --namespace-name joe-test-2 --name iot-data
 ```
 
 Now that we created the Namespace (Cluster) and the EventHub (Topic), we still need a way to access it. For this, a Connection String is used. It can be obtained via either Portal, or the Azure CLI:
 
 ```shell
-az eventhubs namespace authorization-rule keys list -g esp-iot --namespace-name joe-test-2 --name RootManageSharedAccessKey | jq -r '.primaryConnectionString'
+az eventhubs namespace authorization-rule keys list -g my-resource-group --namespace-name joe-test-2 --name RootManageSharedAccessKey | jq -r '.primaryConnectionString'
 ```
 
 This prints out the Connection String to your `EventHub` Namespace.
@@ -57,7 +57,7 @@ If you don't have jq installed, you can omit the jq command and copy the primary
 Configuring kaf to use the eventhub is very straight-forward; run the following command:
 
 ```shell
-kaf config add-eventhub my-eventhub --eh-connstring $(az eventhubs namespace authorization-rule keys list -g esp-iot --namespace-name joe-test-2 --name RootManageSharedAccessKey | jq -r '.primaryConnectionString')
+kaf config add-eventhub my-eventhub --eh-connstring $(az eventhubs namespace authorization-rule keys list -g my-resource-group --namespace-name joe-test-2 --name RootManageSharedAccessKey | jq -r '.primaryConnectionString')
 Added EventHub.
 ```
 
