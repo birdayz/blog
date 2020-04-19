@@ -2,7 +2,7 @@ baseurl = "https://nerden.de"
 languageCode = "en"
 title = "Nerdy stuff"
 theme = "kiss"
-copyright = "&copy; <a href=\"https://github.com/birdayz\">Johannes Bruederl</a> 2018"
+copyright = ""
 disqusShortname = ""
 googleAnalytics = "UA-126316461-1"
 # Number of posts per page
