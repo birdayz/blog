@@ -19,7 +19,7 @@ authorEmail = "johannes.bruederl@gmail.com" # Author email
 customCSS = ["css/custom.css"]
 
 [params.utterances]
-enabled = true
+enabled = false
 
 [params.info]
 adsense = "" # Adsense ID (ID only, without ca-pub-)
