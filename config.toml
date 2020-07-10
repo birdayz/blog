@@ -55,4 +55,5 @@ rootURL = "//matomo.example.com/"
 [blackfriday]
 hrefTargetBlank = true
 
-
+[markup.goldmark.renderer]
+unsafe= true
