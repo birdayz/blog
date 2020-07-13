@@ -17,6 +17,6 @@ To add a sub-zone:
 Now we have two zones, but the sub-zone is not reachable. Due to how the DNS works, we have to add NS records to the "top" zone, that point to the sub-zone:
 <script src="https://gist.github.com/birdayz/723d4b9c42336e8d3fde9a536e984507.js"></script>
 
-This record resides in the "top-level" zone my-domain.com, and points to the sub-zone `domain.my-domain.com`. By using the attribute `name_servers` of the `google_dns_managed_zone` resource, we can connect these two zones within terraform. GCP defines the DNS servers for each zone, by using the `name_servers` attribute we can dynamically refer to the used dns servers.
+This record resides in the "top-level" zone my-domain.com, and points to the sub-zone `subdomain.my-domain.com`. By using the attribute `name_servers` of the `google_dns_managed_zone` resource, we can connect these two zones within terraform. GCP defines the DNS servers for each zone, by using the `name_servers` attribute we can dynamically refer to the used dns servers.
 
 Please note: the above examples require Terraform 0.12+.
