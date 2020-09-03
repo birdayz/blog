@@ -1,6 +1,6 @@
 baseurl = "https://nerden.de"
 languageCode = "en"
-title = "Random stuff"
+title = "Software Engineering"
 theme = "kiss"
 copyright = ""
 disqusShortname = ""
